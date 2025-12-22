@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Fretamento - EB</title>
+    <style>
+        :root { --primary: #044f67; --secondary: #0b678c; --bg: #f5f5f5; --text: #333; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+        header { background: var(--primary); color: white; padding: 1rem 2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .layout { display: flex; min-height: 100vh; }
+        nav { width: 240px; background: #06354a; color: white; padding: 1rem 0; }
+        nav ul { list-style: none; padding: 0; }
+        nav li { padding: 12px 20px; cursor: pointer; transition: 0.3s; border-left: 4px solid transparent; }
+        nav li:hover { background: rgba(255,255,255,0.1); }
+        nav li.active { background: var(--secondary); border-left: 4px solid #fff; }
+        main { flex: 1; padding: 2rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #555; }
+        input, select, button { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; width: 100%; box-sizing: border-box; }
+        button { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        button:hover { background: var(--primary); }
+        button:disabled { background: #999; cursor: not-allowed; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; font-size: 12px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f8f8; }
+        .badge { background: #e0f3ff; color: var(--secondary); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        #loading { display: none; color: #d9534f; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<header><h1>Controle de Fretamento Rodoviário</h1></header>
+
+<div class="layout">
+    <nav>
+        <ul>
+            <li onclick="showView('dashboard')" class="active" id="nav-dashboard">Painel Geral</li>
+            <li onclick="showView('viagem')" id="nav-viagem">Nova Viagem</li>
+            <li onclick="showView('contratos')" id="nav-contratos">Saldos</li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="view-dashboard">
+            <div class="card">
+                <h2>Resumo de Saldo Total</h2>
+                <div id="total-km" style="font-size: 2.5rem; font-weight: bold; color: var(--secondary);">Carregando...</div>
+            </div>
+        </section>
+
+        <section id="view-viagem" style="display:none;">
+            <div class="card">
+                <h2>Registrar Baixa de KM</h2>
+                <div class="grid">
+                    <div>
+                        <label>Estado de Partida</label>
+                        <select id="filtro-estado" onchange="filtrarOpcoes()">
+                            <option value="">Selecione...</option>
+                            <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Tipo de Veículo</label>
+                        <select id="filtro-veiculo" onchange="filtrarOpcoes()">
+                            <option value="">Selecione...</option>
+                            <option value="Ônibus">Ônibus</option>
+                            <option value="Micro-ônibus">Micro-ônibus</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>KM a utilizar</label>
+                        <input type="number" id="input-km" placeholder="Ex: 250">
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <label>Empresa / Contrato / Item (Saldo Disponível)</label>
+                    <select id="select-contrato-final">
+                        <option value="">Aguardando filtros...</option>
+                    </select>
+                </div>
+
+                <button onclick="confirmarBaixa()" id="btn-submit">CONFIRMAR E ABATER SALDO</button>
+                <div id="loading">PROCESSANDO... POR FAVOR AGUARDE.</div>
+            </div>
+        </section>
+
+        <section id="view-contratos" style="display:none;">
+            <div class="card">
+                <h2>Detalhamento de Saldos</h2>
+                <table id="tabela-saldos">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>Contrato</th> <th>Item</th>
+                            <th>Veículo</th>
+                            <th>Saldo (KM)</th>
+                            <th>Estados</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbzSpuel12QFFJ74XbNxNlCaRg25bW4eFDvSaD6vfaQZl40Fr7TTiYRes5IbFB2B2Ug/exec"; 
+    let dadosPlanilha = [];
+
+    function showView(view) {
+        ['dashboard', 'viagem', 'contratos'].forEach(v => {
+            document.getElementById('view-' + v).style.display = (v === view) ? 'block' : 'none';
+            document.getElementById('nav-' + v).classList.toggle('active', v === view);
+        });
+    }
+
+    async function carregarDados() {
+        if (!API_URL || API_URL.includes("SUA_URL")) return;
+        try {
+            // Cache busting para garantir saldo atualizado
+            const timestampUrl = API_URL + (API_URL.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+            const res = await fetch(timestampUrl);
+            dadosPlanilha = await res.json();
+            atualizarInterface();
+        } catch (e) { 
+            console.error(e); 
+            document.getElementById("total-km").innerText = "Erro ao carregar";
+        }
+    }
+
+    function atualizarInterface() {
+        const tbody = document.querySelector("#tabela-saldos tbody");
+        const displayTotal = document.getElementById("total-km");
+        tbody.innerHTML = "";
+        let somaTotal = 0;
+
+        dadosPlanilha.forEach(item => {
+            // Tratamento de número para evitar NaN
+            let saldoRaw = String(item.SALDO_DISPONIVEL || "0").replace(/\./g, '').replace(',', '.');
+            let saldoNumerico = parseFloat(saldoRaw) || 0;
+            somaTotal += saldoNumerico;
+
+            tbody.innerHTML += `<tr>
+                <td>${item.EMPRESA || '-'}</td>
+                <td>${item.CONTRATO || '-'}</td> <td>${item.ITEM || '-'}</td>
+                <td>${item.VEICULO || '-'}</td>
+                <td style="font-weight:bold">${saldoNumerico.toLocaleString('pt-BR')}</td>
+                <td><span class="badge">${item.ESTADOS || '-'}</span></td>
+            </tr>`;
+        });
+
+        displayTotal.innerText = somaTotal.toLocaleString('pt-BR') + " KM";
+    }
+
+    function filtrarOpcoes() {
+        const estado = document.getElementById("filtro-estado").value;
+        const veiculo = document.getElementById("filtro-veiculo").value;
+        const selectFinal = document.getElementById("select-contrato-final");
+
+        selectFinal.innerHTML = '<option value="">Selecione um contrato...</option>';
+
+        dadosPlanilha.filter(item => {
+            // Filtro inteligente que ignora espaços extras
+            const vPlanilha = String(item.VEICULO || "").trim();
+            const ePlanilha = String(item.ESTADOS || "").trim();
+            return (estado === "" || ePlanilha.includes(estado)) && (veiculo === "" || vPlanilha === veiculo);
+        }).forEach(item => {
+            selectFinal.innerHTML += `<option value="${item.ID_CONTROLE}" data-saldo="${item.SALDO_DISPONIVEL}">
+                ${item.EMPRESA} | Contrato: ${item.CONTRATO} | Saldo: ${item.SALDO_DISPONIVEL}km
+            </option>`;
+        });
+    }
+
+    async function confirmarBaixa() {
+        const sel = document.getElementById("select-contrato-final");
+        const id = sel.value;
+        const kmSolicitada = parseFloat(document.getElementById("input-km").value);
+        const btn = document.getElementById("btn-submit");
+        const loader = document.getElementById("loading");
+
+        if (!id || isNaN(kmSolicitada) || kmSolicitada <= 0) {
+            alert("Preencha todos os campos corretamente.");
+            return;
+        }
+
+        const opcaoSelecionada = sel.options[sel.selectedIndex];
+        let saldoDisponivel = parseFloat(String(opcaoSelecionada.getAttribute("data-saldo")).replace(/\./g, '').replace(',', '.'));
+
+        if (kmSolicitada > saldoDisponivel) {
+            alert(`ERRO: Saldo insuficiente!\nDisponível: ${saldoDisponivel}km`);
+            return;
+        }
+
+        if (!confirm(`Confirmar baixa de ${kmSolicitada}km?`)) return;
+
+        btn.disabled = true;
+        loader.style.display = "block";
+
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({ id: id, km: kmSolicitada })
+            });
+            const result = await response.text();
+
+            if (result === "Sucesso") {
+                alert("Baixa realizada com sucesso!");
+                location.reload();
+            } else {
+                alert(result);
+                btn.disabled = false;
+                loader.style.display = "none";
+            }
+        } catch (e) {
+            alert("Erro na conexão.");
+            btn.disabled = false;
+            loader.style.display = "none";
+        }
+    }
+
+    window.onload = carregarDados;
+</script>
+</body>
+</html>
